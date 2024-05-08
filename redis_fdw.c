@@ -1908,7 +1908,7 @@ redis_parse_where(struct redis_fdw_ctx *rctx, RelOptInfo *foreignrel,
 
 
 			if (subexpr->type == T_Param || subexpr->type == T_RelabelType ||
-			    subexpr->type == T_FuncExpr) {
+			    subexpr->type == T_FuncExpr || subexpr->type == T_OpExpr) {
 				struct redis_param_desc *pd;
 
 				param = (Param *)subexpr;
