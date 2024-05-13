@@ -210,7 +210,7 @@ UPDATE rft_pub SET message = 'something' WHERE channel = 'chan';
 DELETE FROM rft_pub WHERE channel = 'chan';
 
 -- list keys
-SELECT * FROM rft_keys;
+SELECT * FROM rft_keys ORDER BY key;
 
 -- list keys with pattern
 SELECT * FROM rft_keys WHERE key = 'rftz*';
