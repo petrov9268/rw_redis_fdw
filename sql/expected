@@ -283,20 +283,34 @@ DELETE 1
  skey | member1 |     -1
  skey | member3 |     -1
  skey | member4 |     -1
-(3 строки)
+(3 rows)
 
  key  | member  | expiry 
 ------+---------+--------
  skey | member3 |     -1
-(1 строка)
+(1 row)
 
 DELETE 1
  key  | member  | score | index | expiry 
 ------+---------+-------+-------+--------
  zkey | member1 |     1 |     0 |      3
  zkey | member2 |     2 |     1 |      3
-(2 строки)
+(2 rows)
 
+CREATE FUNCTION
+CREATE FUNCTION
+ where_clause_func_expr | where_clause_func_expr | where_clause_func_expr | where_clause_func_expr | where_clause_func_expr | where_clause_func_expr 
+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------
+ updated-strval3        | updated-strval3        | updated-strval3        | updated-strval3        | updated-strval3        | updated-strval3
+(1 row)
+
+ where_clause_op_expr | where_clause_op_expr | where_clause_op_expr | where_clause_op_expr | where_clause_op_expr | where_clause_op_expr 
+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------
+ updated-strval3      | updated-strval3      | updated-strval3      | updated-strval3      | updated-strval3      | updated-strval3
+(1 row)
+
+DROP FUNCTION
+DROP FUNCTION
 DELETE 1
 DELETE 1
 DELETE 1

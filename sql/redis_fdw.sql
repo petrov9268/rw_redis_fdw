@@ -247,6 +247,55 @@ DELETE FROM rft_zset WHERE key = 'zkey' AND member = 'member3';
 SELECT * FROM rft_zset WHERE key = 'zkey';
 
 -- ===================================================================
+-- functions with where clause
+-- ===================================================================
+
+-- see https://github.com/nahanni/rw_redis_fdw/issues/14
+CREATE OR REPLACE FUNCTION where_clause_func_expr()
+  RETURNS TEXT
+  LANGUAGE plpgsql
+AS $$
+BEGIN
+  DECLARE
+    _str TEXT = 'strkey';
+    _val TEXT;
+  BEGIN
+    SELECT sval INTO _val FROM rft_str WHERE skey = lower(_str);
+    RETURN _val;
+  END;
+END;
+$$;
+
+-- same but for T_OpExpr
+CREATE OR REPLACE FUNCTION where_clause_op_expr()
+  RETURNS TEXT
+  LANGUAGE plpgsql
+AS $$
+BEGIN
+  DECLARE
+    _str JSON = '{"key":"strkey"}'::JSON;
+    _val TEXT;
+  BEGIN
+    SELECT sval INTO _val FROM rft_str WHERE skey = _str->>'key';
+    RETURN _val;
+  END;
+END;
+$$;
+
+-- on sixth call T_ConstExpr will be replaced with T_FuncExpr on PostgreSQL>=10
+SELECT where_clause_func_expr(), where_clause_func_expr(),
+       where_clause_func_expr(), where_clause_func_expr(),
+       where_clause_func_expr(), where_clause_func_expr();
+
+-- on sixth call T_ConstExpr will be replaced with T_OpExpr on PostgreSQL>=10
+SELECT where_clause_op_expr(), where_clause_op_expr(),
+       where_clause_op_expr(), where_clause_op_expr(),
+       where_clause_op_expr(), where_clause_op_expr();
+
+DROP FUNCTION where_clause_func_expr;
+DROP FUNCTION where_clause_op_expr;
+
+-- ===================================================================
 -- cleanup
 -- ===================================================================
 
