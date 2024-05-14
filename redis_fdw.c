@@ -1888,7 +1888,7 @@ redis_parse_where(struct redis_fdw_ctx *rctx, RelOptInfo *foreignrel,
 					rctx->where_flags |= PARAM_VALUE;
 					break;
 				}
-				/* fall through for other table types */
+				/* falls through */
 			default:
 				/*
 				DEBUG((DEBUG_LEVEL, "unhandled left index: %d", leftidx));
