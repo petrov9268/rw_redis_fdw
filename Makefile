@@ -7,12 +7,13 @@ DATA = $(wildcard redis_fdw--*.sql)
 
 SHLIB_LINK += -lhiredis
 
+PG_CONFIG = pg_config
 PG_CPPFLAGS+= -DWRITE_API
 
 ifdef DEBUG
 PG_CPPFLAGS+= -DDO_DEBUG -g
 endif
 
-PGXS := $(shell pg_config --pgxs)
+PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
 
