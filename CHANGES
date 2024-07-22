@@ -24,16 +24,6 @@
 
 - Fix error with UPDATE/DELETE operations with function calls
 
-2024-05-17 Version 1.1
-
-- Drop patch version from extension version.
-- Fix 'Key is NULL' error.
-- Move upgrade scripts to ./sql folder.
-- Remove upgrade files that are required for PostgreSQL < 10.
-- Add function calls with where clause to redis_fdw.sql
-- Code cleanup: remove trailing spaces and fix implicit fall trhough warning.
-
 2024-06-10 Version 1.0.8
 
 - Fix Makefile to override PG_CONFIG variables
-
