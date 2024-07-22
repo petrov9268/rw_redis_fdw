@@ -297,6 +297,20 @@ DELETE 1
  zkey | member2 |     2 |     1 |      3
 (2 rows)
 
+CREATE FUNCTION
+CREATE FUNCTION
+ where_clause_func_expr | where_clause_func_expr | where_clause_func_expr | where_clause_func_expr | where_clause_func_expr | where_clause_func_expr 
+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------
+ updated-strval3        | updated-strval3        | updated-strval3        | updated-strval3        | updated-strval3        | updated-strval3
+(1 row)
+
+ where_clause_op_expr | where_clause_op_expr | where_clause_op_expr | where_clause_op_expr | where_clause_op_expr | where_clause_op_expr 
+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------
+ updated-strval3      | updated-strval3      | updated-strval3      | updated-strval3      | updated-strval3      | updated-strval3
+(1 row)
+
+DROP FUNCTION
+DROP FUNCTION
 DELETE 1
 DELETE 1
 DELETE 1
