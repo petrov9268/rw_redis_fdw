@@ -1,8 +1,9 @@
+
 MODULE_big = redis_fdw
 OBJS = redis_fdw.o
 
 EXTENSION = redis_fdw
-DATA = $(wildcard ./sql/redis_fdw--*.sql)
+DATA = $(wildcard redis_fdw--*.sql)
 
 SHLIB_LINK += -lhiredis
 
@@ -15,3 +16,4 @@ endif
 
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
+

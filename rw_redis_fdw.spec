@@ -1,4 +1,4 @@
-%define redis_fdw_ver   1.1
+%define redis_fdw_ver   1.0.7
 %define postgresql_ver  11
 
 Summary:        Redis FDW for PostgreSQL %{postgresql_ver}
@@ -6,10 +6,10 @@ Name:           luxms-redis_fdw_%{postgresql_ver}
 Version:        %{redis_fdw_ver}
 Release:        1%{?dist}
 License:        PostgreSQL
-URL:            https://github.com/nahanni/rw_redis_fdw
+URL:            https://github.com/pg-redis-fdw/redis_fdw
 Vendor:         YASP Ltd, Luxms Group
 
-Source0:        https://codeload.github.com/luxms/rw_redis_fdw/tar.gz/v1.1.0#/luxms_rw_redis_fdw_%{postgresql_ver}.tar.gz
+Source0:        https://codeload.github.com/luxms/rw_redis_fdw/tar.gz/v1.0.7#/luxms_rw_redis_fdw_%{postgresql_ver}.tar.gz
 
 BuildRequires:  hiredis-devel llvm-toolset-7-clang postgresql%{postgresql_ver}-devel gcc
 Requires:       postgresql%{postgresql_ver}-server
@@ -45,8 +45,6 @@ export    PATH=/usr/pgsql-%{postgresql_ver}/bin:$PATH
 %{_prefix}/pgsql-11/share/extension/redis_fdw.control
 
 %changelog
-* Fri May 17 2024 p
-- Fix 'Key is NULL' error
 * Mon Jan 15 2024 p
 - Fix error with UPDATE/DELETE operations with function calls
 * Sat Aug 26 2023 p
@@ -58,4 +56,4 @@ export    PATH=/usr/pgsql-%{postgresql_ver}/bin:$PATH
 * Thu Feb 11 2021 Dmitri Dorofeev
 - Fix redisCommand() format string, it does not support %jd, so we are using %ld
 * Thu Jul 16 2020 Andrei Surgutanov
-- Initial RPM specification
+- Initial RPM specification  
