@@ -27,3 +27,9 @@
 2024-06-10 Version 1.0.8
 
 - Fix Makefile to override PG_CONFIG variables
+
+2024-07-22 Version 1.0.9
+
+- Fix key is NULL error
+- Add new test cases
+- Fix 1.0.8 update script
