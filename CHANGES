@@ -32,3 +32,8 @@
 - Remove upgrade files that are required for PostgreSQL < 10.
 - Add function calls with where clause to redis_fdw.sql
 - Code cleanup: remove trailing spaces and fix implicit fall trhough warning.
+
+2024-06-10 Version 1.0.8
+
+- Fix Makefile to override PG_CONFIG variables
+
