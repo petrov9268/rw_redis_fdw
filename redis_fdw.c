@@ -72,7 +72,7 @@
 
 #if PG_VERSION_NUM >= 140000
 #include "optimizer/appendinfo.h"
-#endif 
+#endif
 
 #if PG_VERSION_NUM < 120000
 #include "optimizer/var.h"
@@ -129,11 +129,11 @@ PG_MODULE_MAGIC;
 #define DEBUG_LEVEL INFO
 
 
-/* Possible crashes if you call elog at the end of the macro. 
- * Often you want to print reply fields with ERR_CLEANUP, 
+/* Possible crashes if you call elog at the end of the macro.
+ * Often you want to print reply fields with ERR_CLEANUP,
  * but reply was set to NULL early in this macro :-(
  * For example:
- * 			    ERR_CLEANUP(rctx->r_reply, rctx->r_ctx, 
+ * 			    ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
  *				    (ERROR, "redis error: %s", rctx->r_reply->str));
  */
 #define ERR_CLEANUP(reply,conn,eparams)	do { 			\
@@ -189,7 +189,7 @@ static void redisEndForeignScan(ForeignScanState *node);
 		RangeTblEntry *target_rte,
 		Relation target_relation);
 #else
-	static void redisAddForeignUpdateTargets(PlannerInfo *root, 
+	static void redisAddForeignUpdateTargets(PlannerInfo *root,
 		Index rtindex,
 		RangeTblEntry *target_rte,
 		Relation target_relation);
@@ -1179,7 +1179,7 @@ redis_fdw_validator(PG_FUNCTION_ARGS)
 			ereport(ERROR,
 			       (errcode(ERRCODE_FDW_INVALID_OPTION_NAME),
 			        errmsg("invalid option \"%s\"", def->defname),
-			        errhint("Valid options in this context are: %s", 
+			        errhint("Valid options in this context are: %s",
 			                buf.len ? buf.data : "<none>")
 			        ));
 		}
@@ -1198,7 +1198,7 @@ redis_fdw_validator(PG_FUNCTION_ARGS)
 			if (port > 0)
 				ereport(ERROR,
 				        (errcode(ERRCODE_SYNTAX_ERROR),
-				         errmsg("conflicting or redundant options: %s (%s)", 
+				         errmsg("conflicting or redundant options: %s (%s)",
 				                OPT_PORT, defGetString(def))
 				        ));
 
@@ -1206,7 +1206,7 @@ redis_fdw_validator(PG_FUNCTION_ARGS)
 			if (port <= 0)
 				ereport(ERROR,
 				        (errcode(ERRCODE_SYNTAX_ERROR),
-				         errmsg("invalid value: %s (%s)", 
+				         errmsg("invalid value: %s (%s)",
 				                OPT_PORT, defGetString(def))
 				        ));
 		} else if (strcmp(def->defname, OPT_PASSWORD) == 0) {
@@ -1753,7 +1753,7 @@ redis_get_var(struct redis_fdw_ctx *rctx, RelOptInfo *foreignrel, Var *var)
 		if (rtable->expiry == var->varattno)
 			return VAR_EXPIRY;
 		if (rtable->valttl == var->varattno)
-			return VAR_VALTTL;			
+			return VAR_VALTTL;
 		if (rtable->index == var->varattno)
 			return VAR_INDEX;
 		if (rtable->score == var->varattno)
@@ -1888,7 +1888,7 @@ redis_parse_where(struct redis_fdw_ctx *rctx, RelOptInfo *foreignrel,
 					rctx->where_flags |= PARAM_VALUE;
 					break;
 				}
-				/* fall through for other table types */
+				/* falls through */
 			default:
 				/*
 				DEBUG((DEBUG_LEVEL, "unhandled left index: %d", leftidx));
@@ -1908,7 +1908,7 @@ redis_parse_where(struct redis_fdw_ctx *rctx, RelOptInfo *foreignrel,
 
 
 			if (subexpr->type == T_Param || subexpr->type == T_RelabelType ||
-			    subexpr->type == T_FuncExpr) {
+			    subexpr->type == T_FuncExpr || subexpr->type == T_OpExpr) {
 				struct redis_param_desc *pd;
 
 				param = (Param *)subexpr;
@@ -2253,7 +2253,7 @@ redisGetForeignRelSize(PlannerInfo *root,
 		else
 			reply = redisCommand(ctx, "DBSIZE");
 		break;
-	
+
 	case PG_REDIS_SET:
 		if (rctx->pfxkey != NULL)
 			reply = redisCommand(ctx, "SCARD %s", rctx->pfxkey);
@@ -3014,7 +3014,7 @@ redisIterateForeignScan(ForeignScanState *node)
 				rctx->rowcount = 0;
 				break;
 			default:
-			    ERR_CLEANUP(rctx->r_reply, rctx->r_ctx, 
+			    ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
 				    (ERROR, "redis error: %s", rctx->r_reply->str));
 			}
 
@@ -3114,7 +3114,7 @@ redisIterateForeignScan(ForeignScanState *node)
 
 		reply = rctx->r_reply->element[rctx->rowsdone++];
 		redis_get_reply(reply, &s_value, &i_value, &nil_value);
-		
+
 		reply = rctx->r_reply->element[rctx->rowsdone++];
 		redis_get_reply(reply, &s_score, &score, &nil_value);
 		rctx->rowcount -= 2;
@@ -3134,7 +3134,7 @@ redisIterateForeignScan(ForeignScanState *node)
 
 			reply = rctx->r_reply->element[rctx->rowsdone++];
 			field = reply->str;
-		
+
 			reply = rctx->r_reply->element[rctx->rowsdone++];
 			redis_get_reply(reply, &s_value, &i_value, &nil_value);
 			rctx->rowcount -= 2;
@@ -3388,7 +3388,7 @@ redisAddForeignUpdateTargets(
 		DefElem *def = (DefElem *) lfirst(option);
 		char *v;
 
-		redis_opt_string(def, OPT_TABLETYPE, &v);	
+		redis_opt_string(def, OPT_TABLETYPE, &v);
 		if (v != NULL) {
 			table_type = redis_str_to_tabletype(v);
 			if (table_type == PG_REDIS_INVALID)
@@ -3431,7 +3431,7 @@ redisAddForeignUpdateTargets(
 		Form_pg_attribute att = &tupdesc->attrs[i];
 #endif
 		AttrNumber attrno = att->attnum;
-		Var *var;		
+		Var *var;
 		char *colname;
 		int   colkey;
 		bool  skip;
@@ -3495,12 +3495,12 @@ redisAddForeignUpdateTargets(
 			break;
 		case PG_REDIS_LIST:
 			if (colkey & ~(PARAM_KEY | PARAM_INDEX | PARAM_VALUE))
-				skip = true;	
+				skip = true;
 			break;
 		case PG_REDIS_SET:
 		case PG_REDIS_ZSET:
 			if (colkey & ~(PARAM_KEY | PARAM_MEMBER))
-				skip = true;	
+				skip = true;
 			break;
 		default:
 			/* shouldn't get here */
@@ -3511,7 +3511,7 @@ redisAddForeignUpdateTargets(
 		if (skip)
 			continue;
 
-#if PG_VERSION_NUM < 140000		
+#if PG_VERSION_NUM < 140000
 		/*TargetEntry *tle;*/
 		/* make a Var representing the desired value */
 		var = makeVar(parsetree->resultRelation,
@@ -4000,7 +4000,7 @@ redisExecForeignInsert(EState *estate,
 					ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
 					    (ERROR, "invalid value for valttl %s", param->value));
 			}
-			break;			
+			break;
 		case VAR_MESSAGE:
 			if (isnull)
 				ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
@@ -4187,7 +4187,7 @@ redisExecForeignInsert(EState *estate,
 		}
 
 		if (expreply == NULL) {
-			
+
 			ereport(ERROR,
 			   (errcode(ERRCODE_FDW_ERROR),
 			    errmsg("EXPIREMEMBER reply NULL %d %s", rctx->r_ctx->err, rctx->r_ctx->errstr)));
@@ -4306,7 +4306,7 @@ redis_get_resjunks(struct redis_fdw_ctx *rctx, TupleTableSlot *planSlot,
 		if (!isnull) {
 			rj->hasval |= PARAM_KEY;
 			rj->key = DatumGetCString(OidFunctionCall1(
-		             rctx->rtable.columns[rctx->rtable.key-1].typoutput, 
+		             rctx->rtable.columns[rctx->rtable.key-1].typoutput,
 		             datum));
 			DEBUG((DEBUG_LEVEL, "update/delete WHERE key = %s", rj->key));
 		}
@@ -4317,7 +4317,7 @@ redis_get_resjunks(struct redis_fdw_ctx *rctx, TupleTableSlot *planSlot,
 		if (!isnull) {
 			rj->hasval |= PARAM_FIELD;
 			rj->field = DatumGetCString(OidFunctionCall1(
-		               rctx->rtable.columns[rctx->rtable.field-1].typoutput, 
+		               rctx->rtable.columns[rctx->rtable.field-1].typoutput,
 		               datum));
 			DEBUG((DEBUG_LEVEL, "update/delete WHERE field = %s", rj->field));
 		}
@@ -4329,7 +4329,7 @@ redis_get_resjunks(struct redis_fdw_ctx *rctx, TupleTableSlot *planSlot,
 		if (!isnull) {
 			rj->hasval |= PARAM_INDEX;
 			s = DatumGetCString(OidFunctionCall1(
-		               rctx->rtable.columns[rctx->rtable.index-1].typoutput, 
+		               rctx->rtable.columns[rctx->rtable.index-1].typoutput,
 		               datum));
 			rj->index = atoll(s);
 			DEBUG((DEBUG_LEVEL, "update/delete WHERE index = %" PRId64 " [%s]",
@@ -4342,7 +4342,7 @@ redis_get_resjunks(struct redis_fdw_ctx *rctx, TupleTableSlot *planSlot,
 		if (!isnull) {
 			rj->hasval |= PARAM_MEMBER;
 			rj->member = DatumGetCString(OidFunctionCall1(
-		               rctx->rtable.columns[rctx->rtable.member-1].typoutput, 
+		               rctx->rtable.columns[rctx->rtable.member-1].typoutput,
 		               datum));
 			DEBUG((DEBUG_LEVEL, "update/delete WHERE member = %s", rj->member));
 		}
@@ -4353,7 +4353,7 @@ redis_get_resjunks(struct redis_fdw_ctx *rctx, TupleTableSlot *planSlot,
 		if (!isnull) {
 			rj->hasval |= PARAM_VALUE;
 			rj->member = DatumGetCString(OidFunctionCall1(
-		               rctx->rtable.columns[rctx->rtable.s_value-1].typoutput, 
+		               rctx->rtable.columns[rctx->rtable.s_value-1].typoutput,
 		               datum));
 			DEBUG((DEBUG_LEVEL, "update/delete WHERE value = %s", rj->member));
 		}
