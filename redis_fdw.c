@@ -316,7 +316,7 @@ enum redis_data_type {
 #define PARAM_TABLE_TYPE   0x0200
 #define PARAM_CHANNEL      0x0400
 #define PARAM_MESSAGE      0x0800
-#define PARAM_VALTTL    0x1000
+#define PARAM_VALTTL       0x1000
 
 /*
  * column names/ids that this module accepts
@@ -956,7 +956,6 @@ redis_serialize_fdw(struct redis_fdw_ctx *rctx)
 
 	for (param = rctx->params; param != NULL; param = param->next) {
 		/* keep paramid which is the location of the parameter */
-		Assert(param->param != NULL);
 		result = lappend(result, serializeInt32(param->paramid));
 		result = lappend(result, serializeInt32(param->var_field));
 		result = lappend(result, serializeInt32(param->op));
@@ -3696,6 +3695,7 @@ redisPlanForeignModify(PlannerInfo *root,
 				break;
 			case VAR_MESSAGE:
 				rctx->param_flags |= PARAM_MESSAGE;
+				break;
 			default:
 				DEBUG((DEBUG_LEVEL, "skipping parameter"));
 				break;
