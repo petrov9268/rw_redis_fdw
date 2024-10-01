@@ -2574,102 +2574,105 @@ redisIterateForeignScan(ForeignScanState *node)
 
 	int i;
 
+	struct redis_param_desc *param;
+	Datum datum;
+	bool is_null;
+
+
 	DEBUG((DEBUG_LEVEL, "*** %s", __FUNCTION__));
 
 	MemoryContextReset(rctx->temp_ctx);
 
-	if (rctx->rowsdone == 0 && rctx->rowcount == 0) {
-		struct redis_param_desc *param;
-		Datum datum;
-		bool is_null;
-		redisContext *ctx;
 
-		/* param_flags contains Consts from parse_where() */
-		if (rctx->where_flags & PARAM_EXPIRY) {
-			elog(ERROR, "expiry not supported in WHERE clause");
-		}
+	/* param_flags contains Consts from parse_where() */
+	if (rctx->where_flags & PARAM_EXPIRY) {
+		elog(ERROR, "expiry not supported in WHERE clause");
+	}
 
-		if (rctx->where_flags & PARAM_VALTTL) {
-			elog(ERROR, "valttl not supported in WHERE clause");
-		}
+	if (rctx->where_flags & PARAM_VALTTL) {
+		elog(ERROR, "valttl not supported in WHERE clause");
+	}
 
-		/* fetch parameters and assign to context conditionals */
-		for (param = rctx->params; param; param = param->next) {
-			ExprState *expr_state = param->param;
+	/* fetch parameters and assign to context conditionals */
+	for (param = rctx->params; param; param = param->next) {
+		ExprState *expr_state = param->param;
 
 #if PG_VERSION_NUM < 100000
-			datum = ExecEvalExpr(expr_state, econtext, &is_null, NULL);
+		datum = ExecEvalExpr(expr_state, econtext, &is_null, NULL);
 #else
-			datum = ExecEvalExpr(expr_state, econtext, &is_null);
+		datum = ExecEvalExpr(expr_state, econtext, &is_null);
 #endif
 
-			if (is_null) {
-				param->value = NULL;
-			} else {
-				param->value = datumToString(datum,
-				                       exprType((Node *)expr_state->expr));
+		if (is_null) {
+			param->value = NULL;
+		} else {
+			param->value = datumToString(datum,
+			                       exprType((Node *)expr_state->expr));
 
-				DEBUG((DEBUG_LEVEL, "param %d \"%s\" value: %s",
-				       param->paramid, FIELD_NAMES[param->var_field],
-				       param->value));
+			DEBUG((DEBUG_LEVEL, "param %d \"%s\" value: %s",
+			       param->paramid, FIELD_NAMES[param->var_field],
+			       param->value));
 
-				switch (param->var_field) {
-				case VAR_KEY:
-				case VAR_CHANNEL:
-					rctx->where_flags |= PARAM_KEY | PARAM_CHANNEL;
-					rctx->key = param->value;
-					break;
-				case VAR_FIELD:
-					rctx->where_flags |= PARAM_FIELD;
-					rctx->where_conds.field = param->value;
-					break;
-				case VAR_MEMBER:
-					rctx->where_flags |= PARAM_MEMBER;
-					rctx->where_conds.s_value = param->value;
-					break;
-				case VAR_MESSAGE:
-					rctx->where_flags |= PARAM_MESSAGE;
-					rctx->where_conds.s_value = param->value;
-					break;
-				case VAR_ARRAY_FIELD:
-					rctx->where_flags |= PARAM_ARRAY_FIELD;
-					rctx->where_conds.field = param->value;
-					break;
-				case VAR_MEMBERS:
-					rctx->where_flags |= PARAM_MEMBERS;
-					rctx->where_conds.s_value = param->value;
-					break;
-				case VAR_EXPIRY:
-					elog(ERROR, "expiry not permitted in WHERE clause");
-					break;
-				case VAR_VALTTL:
-					elog(ERROR, "valttl not permitted in WHERE clause");
-					break;
-				case VAR_INDEX:
-				case VAR_SCORE:
-					rctx->where_flags |= PARAM_INDEX;
-					if (param->op == ROP_EQ ||
-					    param->op == ROP_LT ||
-					    param->op == ROP_LTE) {
-						rctx->where_conds.max = atoll(param->value);
-						rctx->where_conds.max_op = param->op;
-					} else if (param->op == ROP_GT || param->op == ROP_GTE) {
-						rctx->where_conds.min = atoll(param->value);
-						rctx->where_conds.min_op = param->op;
-					} else {
-						elog(ERROR, "(should not get here) invalid op %d",
-						     param->op);
-					}
-					break;
-				case VAR_TABLE_TYPE:
-					rctx->where_conds.table_type = param->value;
-					break;
-				default:
-					elog(ERROR, "condition not permitted: %s %s",
-					     FIELD_NAMES[param->var_field], param->value);
+			switch (param->var_field) {
+			case VAR_KEY:
+			case VAR_CHANNEL:
+				rctx->where_flags |= PARAM_KEY | PARAM_CHANNEL;
+				rctx->key = param->value;
+				break;
+			case VAR_FIELD:
+				rctx->where_flags |= PARAM_FIELD;
+				rctx->where_conds.field = param->value;
+				break;
+			case VAR_MEMBER:
+				rctx->where_flags |= PARAM_MEMBER;
+				rctx->where_conds.s_value = param->value;
+				break;
+			case VAR_MESSAGE:
+				rctx->where_flags |= PARAM_MESSAGE;
+				rctx->where_conds.s_value = param->value;
+				break;
+			case VAR_ARRAY_FIELD:
+				rctx->where_flags |= PARAM_ARRAY_FIELD;
+				rctx->where_conds.field = param->value;
+				break;
+			case VAR_MEMBERS:
+				rctx->where_flags |= PARAM_MEMBERS;
+				rctx->where_conds.s_value = param->value;
+				break;
+			case VAR_EXPIRY:
+				elog(ERROR, "expiry not permitted in WHERE clause");
+				break;
+			case VAR_VALTTL:
+				elog(ERROR, "valttl not permitted in WHERE clause");
+				break;
+			case VAR_INDEX:
+			case VAR_SCORE:
+				rctx->where_flags |= PARAM_INDEX;
+				if (param->op == ROP_EQ ||
+				    param->op == ROP_LT ||
+				    param->op == ROP_LTE) {
+					rctx->where_conds.max = atoll(param->value);
+					rctx->where_conds.max_op = param->op;
+				} else if (param->op == ROP_GT || param->op == ROP_GTE) {
+					rctx->where_conds.min = atoll(param->value);
+					rctx->where_conds.min_op = param->op;
+				} else {
+					elog(ERROR, "(should not get here) invalid op %d",
+					     param->op);
 				}
+				break;
+			case VAR_TABLE_TYPE:
+				rctx->where_conds.table_type = param->value;
+				break;
+			default:
+				elog(ERROR, "condition not permitted: %s %s",
+				     FIELD_NAMES[param->var_field], param->value);
 			}
 		}
+	}
+
+	if (rctx->rowsdone == 0 && rctx->rowcount == 0) {
+		redisContext *ctx;
 
 		/* Ensure key exists for key-mandatory tables */
 		if (rctx->table_type != PG_REDIS_LEN && rctx->table_type != PG_REDIS_KEYS) {
