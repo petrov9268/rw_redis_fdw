@@ -128,20 +128,12 @@ PG_MODULE_MAGIC;
 
 #define DEBUG_LEVEL INFO
 
-
-/* Possible crashes if you call elog at the end of the macro.
- * Often you want to print reply fields with ERR_CLEANUP,
- * but reply was set to NULL early in this macro :-(
- * For example:
- * 			    ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
- *				    (ERROR, "redis error: %s", rctx->r_reply->str));
- */
-#define ERR_CLEANUP(reply,conn,eparams)	do { 			\
- 		elog eparams; 									\
-		if ((reply) != NULL) freeReplyObject(reply); 	\
-		if ((conn) != NULL) redisFree(conn);			\
-		reply = NULL; 									\
-		conn = NULL; 									\
+#define ERR_CLEANUP(reply,conn,eparams)	do {            \
+		if ((reply) != NULL) freeReplyObject(reply);    \
+		if ((conn) != NULL) redisFree(conn);            \
+		reply = NULL;                                   \
+		conn = NULL;                                    \
+		elog eparams;                                   \
 	} while (0)
 
 Datum redis_fdw_handler(PG_FUNCTION_ARGS);
@@ -3016,8 +3008,11 @@ redisIterateForeignScan(ForeignScanState *node)
 				rctx->rowcount = 0;
 				break;
 			default:
-			    ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
-				    (ERROR, "redis error: %s", rctx->r_reply->str));
+				char *errmsg;
+
+				errmsg = pstrdup(rctx->r_reply->str);
+				ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
+				    (ERROR, "redis error: %s", errmsg));
 			}
 
 			dump_reply(rctx->r_reply, 0);
