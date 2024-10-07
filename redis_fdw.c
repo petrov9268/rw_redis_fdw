@@ -3071,7 +3071,7 @@ redisIterateForeignScan(ForeignScanState *node)
 	old_ctx = MemoryContextSwitchTo(rctx->temp_ctx);
 	ExecClearTuple(slot);
 
-	if (rctx->rowcount <= 0 || rctx->cmd == REDIS_DISCARD_RESULT) {
+	if (rctx->rowcount == 0 || rctx->cmd == REDIS_DISCARD_RESULT) {
 		if (rctx->r_reply != NULL) {
 			freeReplyObject(rctx->r_reply);
 			rctx->r_reply = NULL;
