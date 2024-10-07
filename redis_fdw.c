@@ -2185,8 +2185,8 @@ redis_do_connect(struct redis_fdw_ctx *rctx)
 		} else if(reply->type == REDIS_REPLY_ERROR) {
 			char *msg = pstrdup(reply->str);
 
-			redisFree(ctx);
 			freeReplyObject(reply);
+			redisFree(ctx);
 			ereport(ERROR,
 		        (errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 		         errmsg("Redis authentication error: %s", msg)));
@@ -2208,8 +2208,8 @@ redis_do_connect(struct redis_fdw_ctx *rctx)
 		} else if(reply->type == REDIS_REPLY_ERROR) {
 			char *msg = pstrdup(reply->str);
 
-			redisFree(ctx);
 			freeReplyObject(reply);
+			redisFree(ctx);
 			ereport(ERROR,
 		        (errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 		         errmsg("Redis select database %d error: %s", rctx->database,
@@ -2571,6 +2571,7 @@ redis_get_reply(redisReply *reply, char **str, int64_t *intval, bool *isnil) {
 		*isnil = true;
 		break;
 	default:
+		freeReplyObject(reply);
 		ereport(ERROR,
 		   (errcode(ERRCODE_FDW_ERROR),
 		   errmsg("unsupported reply type (%d) for command", reply->type)));
@@ -4185,7 +4186,7 @@ redisExecForeignInsert(EState *estate,
 	}
 
 	if (reply == NULL) {
-        char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
+		char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
 
 		ERR_CLEANUP(reply, rctx->r_ctx,
 		            (ERROR, "Redis cmd failed: %s", msg));
@@ -4701,11 +4702,15 @@ redisExecForeignUpdate(EState *estate,
 				reply = redisCommand(rctx->r_ctx, "SADD %s %s",
 			                     rctx->pfxkey, member);
 				DEBUG((DEBUG_LEVEL, "PARAM_VALTTL fix goto and error path"));
+
+				if (set_params & PARAM_EXPIRY)
+					goto check_reply;
 			}
+
 			if (set_params & PARAM_EXPIRY)
 				goto do_expiry;
 
-			ERR_CLEANUP(reply, rctx->r_ctx,
+			ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
 			    (ERROR, "member must be provided"));
 		}
 		break;
@@ -4724,10 +4729,22 @@ redisExecForeignUpdate(EState *estate,
 				      rctx->pfxkey, resjunk.member));
 				reply = redisCommand(rctx->r_ctx, "ZREM %s %s",
 			                         rctx->pfxkey, resjunk.member);
-				if (reply->type == REDIS_REPLY_ERROR || reply->integer == 0) {
+				if (reply == NULL) {
+					char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
+
+					ERR_CLEANUP(reply, rctx->r_ctx,
+					    (ERROR, "Redis cmd failed: %s", msg));
+				} else if (reply->type == REDIS_REPLY_ERROR) {
+					char *msg = pstrdup(reply->str);
+
+					ERR_CLEANUP(reply, rctx->r_ctx,
+					    (ERROR, "Redis cmd failed: %s", msg));
+				} else if (reply->integer == 0) {
 					ERR_CLEANUP(reply, rctx->r_ctx,
 					    (ERROR, "member %s does not exist", resjunk.member));
 				}
+
+				freeReplyObject(reply);
 			}
 			reply = redisCommand(rctx->r_ctx, "ZADD %s %ld %s",
 			                     rctx->pfxkey, score, member);
@@ -4757,6 +4774,7 @@ redisExecForeignUpdate(EState *estate,
 		        (ERROR, "update on non-writable table %d", rctx->table_type));
 	}
 
+check_reply:
 	if (reply == NULL) {
 		char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
 
