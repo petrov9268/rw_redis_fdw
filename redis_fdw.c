@@ -2333,11 +2333,13 @@ redisGetForeignRelSize(PlannerInfo *root,
 	}
 
 	if (rctx->table_type != PG_REDIS_KEYS) {
-		if ((rctx->where_flags & PARAM_KEY) == 0)
+		if ((rctx->where_flags & PARAM_KEY) == 0) {
+			redisFree(ctx);
 			ereport(ERROR,
 			   (errcode(ERRCODE_FDW_DYNAMIC_PARAMETER_VALUE_NEEDED),
 			    errmsg("\"%s\" missing in table option and WHERE clause",
 			    rctx->table_type == PG_REDIS_PUBLISH ? "channel" : "key")));
+		}
 	}
 
 	redisFree(ctx);
@@ -2990,6 +2992,7 @@ redisIterateForeignScan(ForeignScanState *node)
 					rctx->r_reply = redisCommand(ctx, "ZCARD %s",
 					                             rctx->pfxkey);
 				} else {
+					redisFree(rctx->r_ctx);
 					ereport(ERROR,
 					    (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 					     errmsg("permitted redis table types: "
@@ -3027,6 +3030,7 @@ redisIterateForeignScan(ForeignScanState *node)
 		default:
 			break;
 		}
+
 		if (rctx->r_reply != NULL) {
 			switch (rctx->r_reply->type) {
 			case REDIS_REPLY_INTEGER:
@@ -4188,7 +4192,7 @@ redisExecForeignInsert(EState *estate,
 	if (reply == NULL) {
 		char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
 
-		ERR_CLEANUP(reply, rctx->r_ctx,
+		ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
 		            (ERROR, "Redis cmd failed: %s", msg));
 	} else if (reply->type == REDIS_REPLY_ERROR) {
 		char *msg = pstrdup(reply->str);
@@ -4218,7 +4222,7 @@ redisExecForeignInsert(EState *estate,
 			redisFree(rctx->r_ctx);
 			ereport(ERROR,
 			   (errcode(ERRCODE_FDW_ERROR),
-			    errmsg("Redis EXIPIRE cmd failed: %s", msg)));
+			    errmsg("Redis EXPIRE cmd failed: %s", msg)));
 		}
 		freeReplyObject(expreply);
 	}
@@ -4245,11 +4249,11 @@ redisExecForeignInsert(EState *estate,
 		} else if (expreply->type == REDIS_REPLY_ERROR) {
 			char *msg = pstrdup(expreply->str);
 
+			freeReplyObject(expreply);
+			redisFree(rctx->r_ctx);
 			ereport(ERROR,
 			   (errcode(ERRCODE_FDW_ERROR),
 			    errmsg("Redis (KeyDB) EXPIREMEMBER cmd failed: %s", msg)));
-
-				redisFree(rctx->r_ctx);
 		}
 		freeReplyObject(expreply);
 	}
@@ -4685,7 +4689,17 @@ redisExecForeignUpdate(EState *estate,
 				      rctx->pfxkey, resjunk.member));
 				reply = redisCommand(rctx->r_ctx, "SREM %s %s",
 			                         rctx->pfxkey, resjunk.member);
-				if (reply->type == REDIS_REPLY_ERROR || reply->integer == 0) {
+				if (reply == NULL) {
+					char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
+
+					ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
+					    (ERROR, "Redis cmd failed: %s", msg));
+				} else if (reply->type == REDIS_REPLY_ERROR) {
+					char *msg = pstrdup(reply->str);
+
+					ERR_CLEANUP(reply, rctx->r_ctx,
+					    (ERROR, "Redis cmd failed: %s", msg));
+				} else if (reply->integer == 0) {
 					ERR_CLEANUP(reply, rctx->r_ctx,
 					    (ERROR, "member %s does not exist", resjunk.member));
 				}
@@ -4732,7 +4746,7 @@ redisExecForeignUpdate(EState *estate,
 				if (reply == NULL) {
 					char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
 
-					ERR_CLEANUP(reply, rctx->r_ctx,
+					ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
 					    (ERROR, "Redis cmd failed: %s", msg));
 				} else if (reply->type == REDIS_REPLY_ERROR) {
 					char *msg = pstrdup(reply->str);
@@ -4992,12 +5006,16 @@ redisExecForeignDelete(EState *estate,
 			/* rename the index into something unique */
 			reply = redisCommand(rctx->r_ctx, "LSET %s %ld %s",
 			    rctx->pfxkey, resjunk.index, REDIS_LIST_DEL_MAGIC);
-			if (reply->type == REDIS_REPLY_ERROR) {
-				char *errmsg;
+			if (reply == NULL) {
+				char *msg = redis_extract_error_from_ctx(rctx->r_ctx);
 
-				errmsg = pstrdup(reply->str);
+				ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
+				    (ERROR, "redis replied error on LSET: %s", msg));
+			} else if (reply->type == REDIS_REPLY_ERROR) {
+				char *msg = pstrdup(reply->str);
+
 				ERR_CLEANUP(reply, rctx->r_ctx,
-				    (ERROR, "redis replied error on LSET: %s", errmsg));
+				    (ERROR, "redis replied error on LSET: %s", msg));
 			}
 			freeReplyObject(reply);
 
@@ -5044,7 +5062,7 @@ redisExecForeignDelete(EState *estate,
 	} else if (reply->type == REDIS_REPLY_ERROR) {
 		char *msg = pstrdup(reply->str);
 
-		ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
+		ERR_CLEANUP(reply, rctx->r_ctx,
 		    (ERROR, "Redis cmd failed: %s", msg));
 	}
 
