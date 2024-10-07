@@ -33,3 +33,8 @@
 - Fix key is NULL error
 - Add new test cases
 - Fix 1.0.8 update script
+
+2024-10-07 Version 1.0.10
+
+- Fix errors running on server built with --enable-cassert
+- Fix memory issues on error handling
