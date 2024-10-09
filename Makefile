@@ -1,4 +1,3 @@
-
 MODULE_big = redis_fdw
 OBJS = redis_fdw.o
 
@@ -8,12 +7,11 @@ DATA = $(wildcard redis_fdw--*.sql)
 SHLIB_LINK += -lhiredis
 
 PG_CONFIG = pg_config
-PG_CPPFLAGS+= -DWRITE_API
+PG_CFLAGS += -DWRITE_API -Werror
 
 ifdef DEBUG
-PG_CPPFLAGS+= -DDO_DEBUG -g
+PG_CFLAGS += -DDO_DEBUG -O0 -g
 endif
 
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
-
