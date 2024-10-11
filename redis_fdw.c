@@ -66,6 +66,7 @@
 #include "nodes/nodeFuncs.h"
 #include "nodes/pg_list.h"
 #include "optimizer/cost.h"
+#include "optimizer/inherit.h"
 #include "optimizer/pathnode.h"
 #include "optimizer/planmain.h"
 #include "optimizer/restrictinfo.h"
@@ -3755,11 +3756,21 @@ redisPlanForeignModify(PlannerInfo *root,
 		/* figure out which attributes are affected */
 #if PG_VERSION_NUM < 90500
 		tmpset = bms_copy(rte->modifiedCols);
+#elif PG_VERSION_NUM < 12000
+		tmpset = rte->updatedCols;
+#elif PG_VERSION_NUM < 13000
+		tmpset = bms_union(rte->updatedCols, rte->extraUpdatedCols);
 #else
-		tmpset = bms_copy(rte->updatedCols);
+		tmpset = get_rel_all_updated_cols(root, find_base_rel(root,
+		                                  resultRelation));
 #endif
 
+#if PG_VERSION_NUM < 90500
 		while ((i = bms_first_member(tmpset)) >= 0) {
+#else
+		i = -1;
+		while ((i = bms_next_member(tmpset, i)) >= 0 ) {
+#endif
 			/* bit numbers are offset by FirstLowInvalidHeapAttributeNumber */
 			AttrNumber attno = i + FirstLowInvalidHeapAttributeNumber;
 
