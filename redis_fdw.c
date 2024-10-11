@@ -3420,7 +3420,6 @@ redisAddForeignUpdateTargets(
 	List *options;
 	ListCell *option;
 	enum redis_data_type table_type = PG_REDIS_INVALID;
-	int param_flags = 0;
 
 	DEBUG((DEBUG_LEVEL, "*** %s", __FUNCTION__));
 
@@ -3441,10 +3440,6 @@ redisAddForeignUpdateTargets(
 				         errmsg("invalid tabletype (%s)", v)));
 			break;
 		}
-
-		redis_opt_string(def, OPT_KEY, &v);
-		if (v != NULL)
-			param_flags = PARAM_KEY;
 	}
 
 	if (table_type == PG_REDIS_INVALID)
@@ -3506,19 +3501,14 @@ redisAddForeignUpdateTargets(
 		colkey = 0;
 		if (strcmp(colname, "key") == 0) {
 			colkey = PARAM_KEY;
-			param_flags |= PARAM_KEY;
 		} else if (strcmp(colname, "field") == 0) {
 			colkey = PARAM_FIELD;
-			param_flags |= PARAM_FIELD;
 		} else if (strcmp(colname, "index") == 0) {
 			colkey = PARAM_INDEX;
-			param_flags |= PARAM_INDEX;
 		} else if (strcmp(colname, "member") == 0) {
 			colkey = PARAM_MEMBER;
-			param_flags |= PARAM_MEMBER;
 		} else if (strcmp(colname, "value") == 0) {
 			colkey = PARAM_VALUE;
-			param_flags |= PARAM_VALUE;
 		} else {
 			/* skip */
 			continue;
