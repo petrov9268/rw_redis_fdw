@@ -3032,6 +3032,8 @@ redisIterateForeignScan(ForeignScanState *node)
 		}
 
 		if (rctx->r_reply != NULL) {
+			char *msg;
+
 			switch (rctx->r_reply->type) {
 			case REDIS_REPLY_INTEGER:
 			case REDIS_REPLY_STRING:
@@ -3050,7 +3052,7 @@ redisIterateForeignScan(ForeignScanState *node)
 				rctx->rowcount = 0;
 				break;
 			default:
-				char *msg = pstrdup(rctx->r_reply->str);
+				msg = pstrdup(rctx->r_reply->str);
 
 				ERR_CLEANUP(rctx->r_reply, rctx->r_ctx,
 				    (ERROR, "Redis returned error: %s", msg));
