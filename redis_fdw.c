@@ -66,7 +66,11 @@
 #include "nodes/nodeFuncs.h"
 #include "nodes/pg_list.h"
 #include "optimizer/cost.h"
+
+#if PG_VERSION_NUM >= 150200
 #include "optimizer/inherit.h"
+#endif
+
 #include "optimizer/pathnode.h"
 #include "optimizer/planmain.h"
 #include "optimizer/restrictinfo.h"
@@ -3761,9 +3765,10 @@ redisPlanForeignModify(PlannerInfo *root,
 		tmpset = bms_copy(rte->modifiedCols);
 #elif PG_VERSION_NUM < 120000
 		tmpset = rte->updatedCols;
-#elif PG_VERSION_NUM < 130000
+#elif PG_VERSION_NUM < 150200
 		tmpset = bms_union(rte->updatedCols, rte->extraUpdatedCols);
 #else
+		/* this actually works on the latest 13 and 14 versions (after 14.6) */
 		tmpset = get_rel_all_updated_cols(root, find_base_rel(root,
 		                                  resultRelation));
 #endif
