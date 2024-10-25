@@ -2393,7 +2393,7 @@ redisGetForeignPaths(PlannerInfo *root,
 #if PG_VERSION_NUM >= 90500
 	       NULL,    /* no extra plan */
 #endif
-#if PG_VERSION_NUM >= 17000
+#if PG_VERSION_NUM >= 170000
 	       NIL,     /* no fdw_restrictinfo */
 #endif
 	       NIL));   /* no fdw_private data */
@@ -3759,9 +3759,9 @@ redisPlanForeignModify(PlannerInfo *root,
 		/* figure out which attributes are affected */
 #if PG_VERSION_NUM < 90500
 		tmpset = bms_copy(rte->modifiedCols);
-#elif PG_VERSION_NUM < 12000
+#elif PG_VERSION_NUM < 120000
 		tmpset = rte->updatedCols;
-#elif PG_VERSION_NUM < 13000
+#elif PG_VERSION_NUM < 130000
 		tmpset = bms_union(rte->updatedCols, rte->extraUpdatedCols);
 #else
 		tmpset = get_rel_all_updated_cols(root, find_base_rel(root,
