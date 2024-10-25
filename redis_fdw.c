@@ -3657,7 +3657,7 @@ redisPlanForeignModify(PlannerInfo *root,
 			default:
 				ereport(ERROR,
 				     (errcode(ERRCODE_FDW_ERROR),
-					  errmsg("table type %s is read-only",
+				      errmsg("table type %s is read-only",
 				             FIELD_NAMES[src->table_type])));
 				break;
 			}
@@ -3879,7 +3879,7 @@ redisPlanForeignModify(PlannerInfo *root,
 			if (!bms_is_member(rctx->rtable.columns[i].pgattnum -
 			                       FirstLowInvalidHeapAttributeNumber,
 			                  attrs_used)) {
-			    rctx->rtable.columns[i].var_field = -1;
+				rctx->rtable.columns[i].var_field = -1;
 			}
 		}
 	}
@@ -3990,7 +3990,7 @@ redisExecForeignInsert(EState *estate,
 		if (!isnull)
 			param->value = DatumGetCString(OidFunctionCall1(
 			                 rctx->rtable.columns[param->paramid].typoutput,
-		   	                 datum));
+			                 datum));
 
 		switch (param->var_field) {
 		case VAR_KEY:
@@ -4242,11 +4242,11 @@ redisExecForeignInsert(EState *estate,
 		if (val) {
 			DEBUG((DEBUG_LEVEL, "EXPIREMEMBER %s %s %" PRId64 "", rctx->pfxkey, val, rctx->valttl));
 			expreply = redisCommand(rctx->r_ctx, "EXPIREMEMBER %s %s %" PRId64 "",
-		                			rctx->pfxkey, val, rctx->valttl);
+			                        rctx->pfxkey, val, rctx->valttl);
 		} else {
 			DEBUG((DEBUG_LEVEL, "EXPIREMEMBER %s %" PRId64 " %" PRId64 "", rctx->pfxkey, ival, rctx->valttl));
 			expreply = redisCommand(rctx->r_ctx, "EXPIREMEMBER %s %" PRId64 " %" PRId64 "",
-		                			rctx->pfxkey, ival, rctx->valttl);
+			                        rctx->pfxkey, ival, rctx->valttl);
 		}
 
 		if (expreply == NULL) {
@@ -4487,7 +4487,7 @@ redisExecForeignUpdate(EState *estate,
 
 		if (!isnull)
 			param->value = DatumGetCString(OidFunctionCall1(
-		   	                 rctx->rtable.columns[param->paramid].typoutput,
+			                 rctx->rtable.columns[param->paramid].typoutput,
 			                 datum));
 
 		switch (param->var_field) {
