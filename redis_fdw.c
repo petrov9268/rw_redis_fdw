@@ -66,6 +66,11 @@
 #include "nodes/nodeFuncs.h"
 #include "nodes/pg_list.h"
 #include "optimizer/cost.h"
+
+#if PG_VERSION_NUM >= 150200
+#include "optimizer/inherit.h"
+#endif
+
 #include "optimizer/pathnode.h"
 #include "optimizer/planmain.h"
 #include "optimizer/restrictinfo.h"
@@ -2392,6 +2397,9 @@ redisGetForeignPaths(PlannerInfo *root,
 #if PG_VERSION_NUM >= 90500
 	       NULL,    /* no extra plan */
 #endif
+#if PG_VERSION_NUM >= 170000
+	       NIL,     /* no fdw_restrictinfo */
+#endif
 	       NIL));   /* no fdw_private data */
 }
 
@@ -3649,7 +3657,7 @@ redisPlanForeignModify(PlannerInfo *root,
 			default:
 				ereport(ERROR,
 				     (errcode(ERRCODE_FDW_ERROR),
-					  errmsg("table type %s is read-only",
+				      errmsg("table type %s is read-only",
 				             FIELD_NAMES[src->table_type])));
 				break;
 			}
@@ -3755,11 +3763,22 @@ redisPlanForeignModify(PlannerInfo *root,
 		/* figure out which attributes are affected */
 #if PG_VERSION_NUM < 90500
 		tmpset = bms_copy(rte->modifiedCols);
+#elif PG_VERSION_NUM < 120000
+		tmpset = rte->updatedCols;
+#elif PG_VERSION_NUM < 150200
+		tmpset = bms_union(rte->updatedCols, rte->extraUpdatedCols);
 #else
-		tmpset = bms_copy(rte->updatedCols);
+		/* this actually works on the latest 13 and 14 versions (after 14.6) */
+		tmpset = get_rel_all_updated_cols(root, find_base_rel(root,
+		                                  resultRelation));
 #endif
 
+#if PG_VERSION_NUM < 90500
 		while ((i = bms_first_member(tmpset)) >= 0) {
+#else
+		i = -1;
+		while ((i = bms_next_member(tmpset, i)) >= 0 ) {
+#endif
 			/* bit numbers are offset by FirstLowInvalidHeapAttributeNumber */
 			AttrNumber attno = i + FirstLowInvalidHeapAttributeNumber;
 
@@ -3860,7 +3879,7 @@ redisPlanForeignModify(PlannerInfo *root,
 			if (!bms_is_member(rctx->rtable.columns[i].pgattnum -
 			                       FirstLowInvalidHeapAttributeNumber,
 			                  attrs_used)) {
-			    rctx->rtable.columns[i].var_field = -1;
+				rctx->rtable.columns[i].var_field = -1;
 			}
 		}
 	}
@@ -3971,7 +3990,7 @@ redisExecForeignInsert(EState *estate,
 		if (!isnull)
 			param->value = DatumGetCString(OidFunctionCall1(
 			                 rctx->rtable.columns[param->paramid].typoutput,
-		   	                 datum));
+			                 datum));
 
 		switch (param->var_field) {
 		case VAR_KEY:
@@ -4223,11 +4242,11 @@ redisExecForeignInsert(EState *estate,
 		if (val) {
 			DEBUG((DEBUG_LEVEL, "EXPIREMEMBER %s %s %" PRId64 "", rctx->pfxkey, val, rctx->valttl));
 			expreply = redisCommand(rctx->r_ctx, "EXPIREMEMBER %s %s %" PRId64 "",
-		                			rctx->pfxkey, val, rctx->valttl);
+			                        rctx->pfxkey, val, rctx->valttl);
 		} else {
 			DEBUG((DEBUG_LEVEL, "EXPIREMEMBER %s %" PRId64 " %" PRId64 "", rctx->pfxkey, ival, rctx->valttl));
 			expreply = redisCommand(rctx->r_ctx, "EXPIREMEMBER %s %" PRId64 " %" PRId64 "",
-		                			rctx->pfxkey, ival, rctx->valttl);
+			                        rctx->pfxkey, ival, rctx->valttl);
 		}
 
 		if (expreply == NULL) {
@@ -4468,7 +4487,7 @@ redisExecForeignUpdate(EState *estate,
 
 		if (!isnull)
 			param->value = DatumGetCString(OidFunctionCall1(
-		   	                 rctx->rtable.columns[param->paramid].typoutput,
+			                 rctx->rtable.columns[param->paramid].typoutput,
 			                 datum));
 
 		switch (param->var_field) {
