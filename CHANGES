@@ -38,3 +38,10 @@
 
 - Fix errors running on server built with --enable-cassert
 - Fix memory issues on error handling
+
+2025-04-14 Version 1.0.11
+
+- PostgreSQL 16 and 17 support
+- Stop manually copying same files, just generate them at build
+- Make it possible to run make installcheck for this extension
+- Remove outdated spec file
